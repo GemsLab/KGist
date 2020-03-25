@@ -1,0 +1,10 @@
+1 black 3
+1 black 4
+2 black 5
+2 black 6
+3 other_black 8
+3 other_black 9
+3 other_black 10
+4 other_black 11
+5 other_black 12
+7 other_black 13

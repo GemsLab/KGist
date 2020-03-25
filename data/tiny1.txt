@@ -1,0 +1,12 @@
+1 black0 3
+1 black0 4
+2 black0 5
+2 black0 6
+3 black1 8
+3 black2 8
+3 black2 9
+4 black1 10
+4 black2 11
+5 black2 12
+6 black1 13
+7 black2 14
