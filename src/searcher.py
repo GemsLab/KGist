@@ -165,7 +165,7 @@ class Searcher:
         if verbosity > 0:
             print('{}% of candidates qualified.'.format(round(num_qualified / n * 100, 2)))
 
-    def build_model(self, rank='metric', order=['mdl_err', 'coverage', 'lex'], passes=1, label_qualify=False, verbosity=10000):
+    def build_model(self, rank='metric', order=['mdl_err', 'coverage', 'lex'], passes=2, label_qualify=True, verbosity=1000000):
         '''
         The core of the algorithm. (Sections 4.1.2-4.2.1)
         '''
