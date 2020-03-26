@@ -34,7 +34,25 @@ e2 l1 l2 l3 ...
 
 ## Example usage (from `src/` dir)
 
+#### Command Line
+
 `python main.py --graph nell -n`
+
+#### Interface
+
+```
+# load graph
+graph = Graph('nell', idify=True)
+# build initial model
+model = searcher.build_model()
+model.print_stats()
+# perform rule merging refinement
+model = model.merge_rules(verbosity=args.verbosity)
+model.print_stats()
+# perform rule nesting refinement
+model = model.nest_rules(verbosity=args.verbosity)
+model.print_stats()
+```
 
 ### Arguments
 
