@@ -47,10 +47,10 @@ graph = Graph('nell', idify=True)
 model = searcher.build_model()
 model.print_stats()
 # perform rule merging refinement
-model = model.merge_rules(verbosity=args.verbosity)
+model = model.merge_rules()
 model.print_stats()
 # perform rule nesting refinement
-model = model.nest_rules(verbosity=args.verbosity)
+model = model.nest_rules()
 model.print_stats()
 ```
 
