@@ -36,7 +36,7 @@ e2 l1 l2 l3 ...
 
 #### Command Line
 
-`python main.py --graph nell -n`
+`python main.py --graph nell`
 
 #### Interface
 
