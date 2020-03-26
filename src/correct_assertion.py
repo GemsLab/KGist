@@ -10,13 +10,12 @@ class Node:
         self.neighbors = set()
 
     def add_neighbor(self, pred, dir, node_type, node):
-        # print('adding to {}: neighbor ({}, {}, {}, {})'.format(self.name, pred, dir, node_type, node))
         if (pred, dir, node_type) not in self.neighbors_of_type:
             self.neighbors_of_type[(pred, dir, node_type)] = set()
         self.neighbors_of_type[(pred, dir, node_type)].add(node)
         self.neighbors.add(node)
 
-class RealizedRule:
+class CorrectAssertion:
     '''
     A class which represents realized rules as rooted subgraphs.
     '''
@@ -41,8 +40,6 @@ class RealizedRule:
         obj_typ = u_typ if dir == 'in' else v_typ
         if u not in self.nodes:
             self.nodes[u] = Node(u, u_typ)
-        # print('edge: ({}, {}, {}, {}, {}, {})'.format(u, u_typ, pred, dir, v, v_typ))
-        # print('sub: {} obj: {}'.format(sub, obj))
         if v not in self.nodes:
             self.nodes[v] = Node(v, v_typ)
         self.nodes[sub].add_neighbor(pred, 'out', obj_typ, obj)
@@ -61,15 +58,15 @@ class RealizedRule:
                     self.labels.add((label, v))
 
 
-    def merge(self, realized_rule):
-        assert(self.root == realized_rule.root)
-        for edge in realized_rule.edges:
+    def merge(self, correct_assertion):
+        assert(self.root == correct_assertion.root)
+        for edge in correct_assertion.edges:
             self.add_edge(edge)
-        self.edge_ids.update(realized_rule.edge_ids)
-        self.labels.update(realized_rule.labels)
+        self.edge_ids.update(correct_assertion.edge_ids)
+        self.labels.update(correct_assertion.labels)
 
-    def compose(self, realized_rule):
-        for edge in realized_rule.edges:
+    def compose(self, correct_assertion):
+        for edge in correct_assertion.edges:
             self.add_edge(edge)
-        self.edge_ids.update(realized_rule.edge_ids)
-        self.labels.update(realized_rule.labels)
+        self.edge_ids.update(correct_assertion.edge_ids)
+        self.labels.update(correct_assertion.labels)

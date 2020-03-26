@@ -6,7 +6,7 @@ import sys
 import json
 import networkx as nx
 from rule import Rule
-from realized_rule import RealizedRule
+from correct_assertion import CorrectAssertion
 from copy import copy, deepcopy
 import _pickle as pickle
 import random
@@ -118,7 +118,7 @@ class Model:
         if not force and self.rule_graph:
             return
 
-        hub_to_rule = defaultdict(list)
+        root_to_rule = defaultdict(list)
         # find dependencies and store as edges for a dependency graph
         edges = list()
         tree_rules = list()
@@ -127,19 +127,19 @@ class Model:
                 parent, children = rule
                 rule = Rule(parent, children)
             self.plant_forest(rule)
-            hub_to_rule[rule.root].append(rule)
+            root_to_rule[rule.root].append(rule)
             tree_rules.append(rule)
 
         if not build_prime:
             # build graph
             for rule in tree_rules:
-                # if leaf matches other rules' hubs
-                if len(set(rule.get_leaves()).intersection(set(hub_to_rule.keys()))) > 0:
+                # if leaf matches other rules' roots
+                if len(set(rule.get_leaves()).intersection(set(root_to_rule.keys()))) > 0:
                     # get the matching rules
                     matching_rules = set()
                     for leaf in rule.get_leaves():
-                        if leaf in hub_to_rule:
-                            matching_rules.update(hub_to_rule[leaf])
+                        if leaf in root_to_rule:
+                            matching_rules.update(root_to_rule[leaf])
                     for other_rule in matching_rules:
                         if rule.root in other_rule.get_leaves(): # don't allow loops
                             continue
@@ -149,13 +149,13 @@ class Model:
 
         if build_prime:
             def jaccard_sim(r1, r2):
-                a = set(real.root for real in r1.realizations)
-                b = set(real.root for real in r2.realizations)
+                a = set(real.root for real in r1.correct_assertions)
+                b = set(real.root for real in r2.correct_assertions)
                 return len(a.intersection(b)) / len(a.union(b)) if len(a.union(b)) > 0 else 0
             # build rule graph prime, which encodes dependencies of shared root types
             edges = list()
             for rule in tree_rules:
-                for other_rule in hub_to_rule[rule.root]:
+                for other_rule in root_to_rule[rule.root]:
                     if rule != other_rule: #(other_rule, rule) not in edges:
                         self.plant_forest(rule)
                         self.plant_forest(other_rule)
@@ -207,32 +207,32 @@ class Model:
 
     def plant_forest(self, rule):
         '''
-        Grow a forest of realizations for a level-0 rule
+        Grow a forest of correct_assertions for a level-0 rule
         '''
         if rule.realized():
             return
         leaves = list()
         roots = set(self.graph.candidates[rule.tuplify()]['ca_to_size'].keys())
-        # maps hubs to the realizations where they are the root
-        hubs_to_realizations = dict()
+        # maps roots to the correct_assertions where they are the root
+        roots_to_correct_assertions = dict()
         # iterate over edges explained by rule and construct stars
         for eid in self.graph.candidates[rule.tuplify()]['edges']:
             sub, pred, obj = self.graph.id_to_edge[eid]
             dir = rule.children[0][1]
-            # decide which is hub and spoke
-            hub = sub if dir == 'out' else obj
+            # decide which is root and spoke
+            root = sub if dir == 'out' else obj
             spoke = obj if dir == 'out' else sub
-            u, v = hub, spoke
-            # create a rule realization for the hub
-            if hub not in hubs_to_realizations:
-                hubs_to_realizations[hub] = RealizedRule(hub, label=rule.root)
-            hub = hubs_to_realizations[hub]
+            u, v = root, spoke
+            # create a rule correct_assertion for the root
+            if root not in roots_to_correct_assertions:
+                roots_to_correct_assertions[root] = CorrectAssertion(root, label=rule.root)
+            root = roots_to_correct_assertions[root]
             # add edge (u, u_typ, pred, dir, v, v_typ)
             edge = (u, rule.root, pred, dir, v, rule.children[0][2].root)
-            hub.add_edge(edge, eid=eid, labels=True)
-        # iterate over each star (rule realization), and add to the rule (at the root level)
-        for hub, realization in hubs_to_realizations.items():
-            rule.insert_realization(realization)
+            root.add_edge(edge, eid=eid, labels=True)
+        # iterate over each star (rule correct_assertion), and add to the rule (at the root level)
+        for root, correct_assertion in roots_to_correct_assertions.items():
+            rule.insert_correct_assertion(correct_assertion)
 
     def nest_rules(self, verbosity):
         '''
@@ -287,7 +287,7 @@ class Model:
                 # pair is two rules that are candidates for composition
                 model_to_test = Model(self.graph)
                 candidate = compose(r1, r2)
-                if len(candidate.realizations) == 0:
+                if len(candidate.correct_assertions) == 0:
                     continue
                 approx_L = best_val - evaluator.length_rule(r1) - evaluator.length_rule_assertions(r1, best_model) - evaluator.length_rule(r2) - evaluator.length_rule_assertions(r2, best_model) + evaluator.length_rule(candidate) + evaluator.length_rule_assertions(candidate, best_model)
                 if approx_L >= best_val:
@@ -334,54 +334,32 @@ class Model:
             print('{} nestings performed.'.format(num_nested))
         return best_model
 
-    def build_from_model(self, model):
-        for rule in model.rules:
-            if type(rule) is tuple:
-                self.add_rule(rule)
-            else:
-                for atom in rule.get_atoms():
-                    self.add_rule(atom)
-
-    def save(self, path='../data/output/model.json'):
+    def save(self, fname):
         '''
         Saves the model in json format.
 
         :path: path to a json file where model should be saved
         '''
-        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-        outfile = os.path.join(ROOT_DIR, path)
-
-        data = dict()
-        data['rules'] = list()
+        rules = list()
         for rule in self.rules:
-            cas = defaultdict(set)
-            for eid in self.graph.candidates[rule]['edges']:
-                sub, pred, obj = self.graph.id_to_edge[eid]
-                if self.graph.idify:
-                    hub = sub if rule[1][0][1] == 'out' else obj
-                    spoke = obj if rule[1][0][1] == 'out' else sub
-                    cas[hub].add(spoke)
-            correct_hubs = set(cas.keys())
-            exceptions = list(self.graph.nodes_with_type(rule[0], num_only=False).difference(correct_hubs))
-            if self.graph.idify:
-                hub_labels = list(self.graph.id_to_label[label] for label in rule[0])
-                spoke_labels = list(self.graph.id_to_label[label] for label in rule[1][0][2][0])
-                edge_type = self.graph.id_to_pred[rule[1][0][0]]
-                exceptions = list(self.graph.id_to_node[node] for node in exceptions)
-            data['rules'].append({'rule': {'hub_labels': hub_labels,
-                                           'edge_type': edge_type,
-                                           'spoke_labels': spoke_labels,
-                                           'dir': rule[1][0][1]},
-                                  'correct_assertions': list(),
-                                  'exceptions': exceptions})
-            for hub, spokes in cas.items():
-                if self.graph.idify:
-                    hub = self.graph.id_to_node[hub]
-                    spokes = list(self.graph.id_to_node[spoke] for spoke in spokes)
-                data['rules'][-1]['correct_assertions'].append({'hub': hub, 'spokes': list(spokes)})
+            if type(rule) is tuple:
+                parent, children = rule
+                rule = Rule(parent, children)
+            self.plant_forest(rule)
+            rules.append(rule)
 
-        with open(outfile, 'w') as f:
-            json.dump(data, f, indent=4)
+        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+        pickle_outfile = os.path.join(ROOT_DIR, fname + '.pickle')
+        with open(pickle_outfile, 'wb') as handle:
+            pickle.dump(self, handle)
+
+        rule_outfile = os.path.join(ROOT_DIR, fname + '.rules')
+        with open(rule_outfile, 'w') as f:
+            for rule in rules:
+                if self.graph.idify:
+                    f.write('{}\n'.format(rule.tuplify(id_to_node=self.graph.id_to_node, id_to_pred=self.graph.id_to_pred)))
+                else:
+                    f.write('{}\n'.format(rule.tuplify()))
 
     def percent_improved(self):
         evaluator = Evaluator(self.graph)

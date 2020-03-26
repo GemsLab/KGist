@@ -175,16 +175,16 @@ class Evaluator:
             # num assertions
             num_assertions = self.graph.nodes_with_type(rule.root)
             # num exceptions
-            num_correct = len(rule.realizations)
+            num_correct = len(rule.correct_assertions)
             num_exceptions = num_assertions - num_correct
             length = log(num_assertions)
             # exception ids
             length += self.length_binomial(num_assertions, num_exceptions)
             cost_of_exceptions = length
             # correct assertions
-            def length_realization(real, real_node, _rule, depth=1):
+            def length_correct_assertion(real, real_node, _rule, depth=1):
                 '''
-                :real: a RealizedRule, which we descend recusrively to encode
+                :real: a CorrectAssertion, which we descend recusrively to encode
                 :_rule: a Rule, of which real is a relization
                 '''
                 _length = 0
@@ -197,11 +197,11 @@ class Evaluator:
                     _length += self.length_binomial(self.graph.n - 1, num_assertions)
                     # visit children
                     for real_child in real.nodes[real_node].neighbors_of_type[(pred, dir, child.root)]:
-                        _length += length_realization(real, real_child, child, depth + 1)
+                        _length += length_correct_assertion(real, real_child, child, depth + 1)
                 return _length
 
-            for real in rule.realizations: # each realization is a tree
-                length += length_realization(real, real.root, rule)
+            for real in rule.correct_assertions: # each correct_assertion is a tree
+                length += length_correct_assertion(real, real.root, rule)
 
             self.rule_to_length[rule.tuplify()] = length
             if info:

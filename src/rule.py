@@ -10,7 +10,7 @@ class Rule:
         self.children = list()
         # a list of trees that match the rule structure all the way down
         #   - if empty, then the rule is not a root
-        self.realizations = list()
+        self.correct_assertions = list()
         if children:
             for child in children:
                 self.insert(child)
@@ -23,7 +23,7 @@ class Rule:
         return len(self.children) > 0
 
     def realized(self):
-        return len(self.realizations) > 0
+        return len(self.correct_assertions) > 0
 
     def insert(self, branch):
         '''
@@ -42,23 +42,23 @@ class Rule:
             pred, dir, leaf = branch
         self.children.append((pred, dir, leaf))
 
-    def insert_realization(self, realization):
+    def insert_correct_assertion(self, correct_assertion):
         '''
-        Adds a realization, which should only be used for roots.
+        Adds a correct_assertion, which should only be used for roots.
 
-        :realization: a RealizedRule
+        :correct_assertion: a CorrectAssertion
         '''
-        self.realizations.append(realization)
+        self.correct_assertions.append(correct_assertion)
 
     def get_edges_covered(self):
         covered = set()
-        for real in self.realizations:
+        for real in self.correct_assertions:
             covered.update(real.edge_ids)
         return covered
 
     def get_labels_covered(self):
         covered = set()
-        for real in self.realizations:
+        for real in self.correct_assertions:
             covered.update(real.labels)
         return covered
 
@@ -69,17 +69,15 @@ class Rule:
         assert(other_rule.root == self.root)
 
         self.children.extend(other_rule.children)
-        self.realizations = sorted(self.realizations, key=lambda real: real.root)
-        other_rule.realizations = sorted(other_rule.realizations, key=lambda real: real.root)
-        # assert(len(other_rule.realizations) == len(self.realizations))
-        # assert(set(real.root for real in other_rule.realizations) == set(real.root for real in self.realizations))
-        for real, other_real in zip(self.realizations, other_rule.realizations):
+        self.correct_assertions = sorted(self.correct_assertions, key=lambda real: real.root)
+        other_rule.correct_assertions = sorted(other_rule.correct_assertions, key=lambda real: real.root)
+        for real, other_real in zip(self.correct_assertions, other_rule.correct_assertions):
             real.merge(other_real)
         return True
 
     def pin_to_leaf(self, leaf):
         '''
-        Pins a Rule to a leaf, and does likewise for the rule Realizations.
+        Pins a Rule to a leaf, and does likewise for the rule correct_assertions.
 
         :leaf: a Rule object whose root is the label of the leaf to which we should pin it.
 
@@ -91,13 +89,12 @@ class Rule:
             pred, dir, child = child
             if child.root == leaf.root: # pin here
                 if self.realized():
-                    for leaf_real in leaf.realizations: # append each leaf realization
-                        for real in self.realizations: # pin to each realization as well, if appropriate
+                    for leaf_real in leaf.correct_assertions: # append each leaf correct_assertion
+                        for real in self.correct_assertions: # pin to each correct_assertion as well, if appropriate
                             if leaf_real.root in real.nodes:
                                 real.compose(leaf_real)
                 self.children[i][2].children.extend(leaf.children)
                 found = True
-                # break
         if not found: # try children recursively
             for child in self.children:
                 found = child[2].pin_to_leaf(leaf) or found
@@ -136,20 +133,15 @@ class Rule:
 
     def jaccard_sim(self, other_rule):
         leaves = set()
-        for real in self.realizations:
+        for real in self.correct_assertions:
             leaves.update(set(real.nodes.keys()).difference({real.root}))
-        roots = set(real.root for real in other_rule.realizations)
+        roots = set(real.root for real in other_rule.correct_assertions)
         return len(leaves.intersection(roots)) / len(leaves.union(roots)) if len(leaves.union(roots)) > 0 else 0
 
     def tuplify(self, id_to_node=None, id_to_pred=None):
         if id_to_node and id_to_pred:
             return (tuple(id_to_node[label] for label in self.root), tuple((id_to_pred[child[0]], child[1], child[2].tuplify(id_to_node, id_to_pred)) for child in self.children))
         return (self.root, tuple((child[0], child[1], child[2].tuplify()) for child in self.children))
-
-    def tuplify_realizations(self):
-        if not self.has_children():
-            return tuple(self.realizations)
-        return tuple((tuple(self.realizations), child[2].tuplify_realizations()) for child in self.children)
 
     def get_atoms(self):
         atoms = list()
@@ -175,82 +167,21 @@ class Rule:
             return 0
         return 1 + min(child[2].min_depth() for child in self.children)
 
-    def get_assertions_at_depth(self, desired_depth, verbose=True):
-        '''
-        BFS to depth, then return the nodes at that level.
-        '''
-        # TODO
-        return None
-        # if desired_depth in self.assertions_at_depth:
-        #     return self.assertions_at_depth[desired_depth]
-        # if desired_depth == 0:
-        #     if verbose:
-        #         print('Not valid for 0 depth.')
-        #     return
-        # depth = 0
-        # frontier = [(self, self.realizations, depth)]
-        # while len(frontier) > 0:
-        #     node, realizations, depth = frontier.pop()
-        #     if depth > desired_depth:
-        #         return
-        #     if depth == desired_depth:
-        #         self.assertions_at_depth[desired_depth] = realizations
-        #         return realizations
-        #     for _, _, child in node.children:
-        #         child_realizations = list()
-        #         for real in realizations:
-        #             child_realizations.extend(list(real.children.values()))
-        #         frontier.insert(0, (child, child_realizations, depth + 1))
-
-    def get_correct_at_depth(self, desired_depth):
-        '''
-        BFS to depth, then return the nodes that are correct at the level.
-        '''
-        # TODO
-        return None
-        # if desired_depth in self.correct_at_depth:
-        #     return self.correct_at_depth[desired_depth]
-        # depth = 0
-        # frontier = [(self, depth)]
-        # while len(frontier) > 0:
-        #     node, depth = frontier.pop()
-        #     if depth > desired_depth:
-        #         return
-        #     if depth == desired_depth:
-        #         # check which are correct
-        #         expected = list((child[0], child[1], child[2].root) for child in node.children)
-        #         correct_realizations = list()
-        #         for real in self.realizations:
-        #             correct = True
-        #             for exp in expected:
-        #                 if exp not in real.nodes[real.root].neighbors_of_type:
-        #                     correct = False
-        #                     break
-        #             if correct:
-        #                 correct_realizations.append(real)
-        #         self.correct_at_depth[desired_depth] = correct_realizations
-        #         return correct_realizations
-        #     for _, _, child in node.children:
-        #         child_realizations = list()
-        #         for real in realizations:
-        #             child_realizations.extend(list(real.children.values()))
-        #         frontier.insert(0, (child, child_realizations, depth + 1))
-
     def get_correct(self, with_removed=False):
         '''
-        Correct means that at every level, the realizations align with the rule structure.
+        Correct means that at every level, the correct_assertions align with the rule structure.
 
         :return: a list of relization trees that are correct all the way down.
         '''
 
         def is_correct(real, real_node, node):
             '''
-            :real: a realization
+            :real: a correct_assertion
             :node: a rule node
 
-            :return: true if the realization is correct from this node on
+            :return: true if the correct_assertion is correct from this node on
             '''
-            # the types of children expected of the realization
+            # the types of children expected of the correct_assertion
             expected_children = list((child[0], child[1], child[2].root) for child in node.children)
             correct = True # innocent until proven guilty
             for pred, dir, child in expected_children:
@@ -268,14 +199,14 @@ class Rule:
                         break
             return correct
 
-        return list(filter(lambda real: is_correct(real, real.nodes[real.root], self), self.realizations))
+        return list(filter(lambda real: is_correct(real, real.nodes[real.root], self), self.correct_assertions))
 
     def filter_errant(self):
         '''
-        Filter out the realizations that err at some level.
+        Filter out the correct_assertions that err at some level.
         '''
         # bfs
-        self.realizations = self.get_correct()
+        self.correct_assertions = self.get_correct()
 
     def print(self):
         frontier = [(None, None, self, 0)]

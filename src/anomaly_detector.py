@@ -59,10 +59,10 @@ class AnomalyDetector:
         rules = set(filter(lambda rule: has_pred(rule, pred), rules))
 
         for rule in rules:
-            cas = set(self.model.graph.candidates[rule]['ca_to_size'].keys()) if type(rule) is tuple else set(real.root for real in rule.realizations)
+            cas = set(self.model.graph.candidates[rule]['ca_to_size'].keys()) if type(rule) is tuple else set(real.root for real in rule.correct_assertions)
             if node not in cas:
                 num_assertions = self.model.graph.nodes_with_type(rule[0] if type(rule) is tuple else rule.root)
-                num_correct = len(self.model.graph.candidates[rule]['ca_to_size'] if type(rule) is tuple else rule.realizations)
+                num_correct = len(self.model.graph.candidates[rule]['ca_to_size'] if type(rule) is tuple else rule.correct_assertions)
                 num_exceptions = num_assertions - num_correct
                 assert(num_assertions > 0)
                 assert(num_exceptions > 0)

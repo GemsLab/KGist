@@ -16,7 +16,7 @@ Caleb Belth, Xinyi Zheng, Jilles Vreeken, and Danai Koutra. _What is Normal, Wha
 
 Nell and DBpedia are zipped in the `data/` directory. Yago is too big to distribute via Github.
 
-`{KG_name}.txt` format space separated, one triple per line.
+`{KG_name}.txt` format: space separated, one triple per line.
 
 ```
 s1 p1 o1
@@ -46,17 +46,20 @@ e2 l1 l2 l3 ...
 
 `--idify / -i True/False (Optional; Default = True)` Convert entities and predicates to integer ids internally for faster processing
 
-`--verbosity / -v [0, infinity) (Optional; Default = 1,000,000)` How frequently to log process (use integers)
+`--verbosity / -v [0, infinity) (Optional; Default = 1,000,000)` How frequently to log progress (use integers)
 
-`--output_path / -o (Optional; Default = '../data/output/')` What directory to write the output to (log will still be printed to stdout)
+`--output_path / -o (Optional; Default = 'output/')` What directory to write the output to (log will still be printed to stdout)
+
+### Output
+
+- `output/{KG_name}_model.pickle` saves a Model object.
+- `output/{KG_name}_model.rules` saves the rules, which are recursively defined, in parenthetical form.
 
 ### Coming Soon
 
-- Documentation on saving and loading models.
+- Documentation on loading models.
 - More extensive examples.
 
 ### Comments or Questions
 
-Contact Caleb Belth with comments or questions: `cbelth@umich.edu`
-
-`https://quickshift.xyz/`
+Contact [Caleb Belth](https://quickshift.xyz/) with comments or questions: `cbelth@umich.edu`

@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument('--output_path',
                         '-o',
                         type=str,
-                        default='../data/output/',
+                        default='../output/',
                         help='path for output and log files')
     return parser.parse_args()
 
@@ -65,18 +65,21 @@ def main(args):
     if args.verbosity > 0:
         print('***** Initial model *****')
         model.print_stats()
+        model.save('{}{}_model'.format(args.output_path, args.graph))
 
     if args.rule_merging:
         model = model.merge_rules(verbosity=args.verbosity)
         if args.verbosity > 0:
             print('***** Model refined with Rm *****')
             model.print_stats()
+            model.save('{}{}_model_Rm'.format(args.output_path, args.graph))
 
     if args.rule_nesting:
         model = model.nest_rules(verbosity=args.verbosity)
         if args.verbosity:
             print('***** Model refined with Rn *****')
             model.print_stats()
+            model.save('{}{}_model_Rm_Rn'.format(args.output_path, args.graph))
 
 if __name__ == "__main__":
     args = parse_args()
