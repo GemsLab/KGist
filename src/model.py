@@ -175,7 +175,7 @@ class Model:
 
         return new_obj
 
-    def merge_rules(self, verbosity):
+    def merge_rules(self, verbosity=1000000):
         '''
         Perfrom merging refinement (Rm).
 
@@ -234,7 +234,7 @@ class Model:
         for root, correct_assertion in roots_to_correct_assertions.items():
             rule.insert_correct_assertion(correct_assertion)
 
-    def nest_rules(self, verbosity):
+    def nest_rules(self, verbosity=1000000):
         '''
         Perfrom nesting refinement (Rn).
 
