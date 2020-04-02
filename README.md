@@ -43,6 +43,8 @@ e2 l1 l2 l3 ...
 ```
 # load graph
 graph = Graph('nell', idify=True)
+# create a Searcher object to search for a model (set of rules)
+searcher = Searcher(graph)
 # build initial model
 model = searcher.build_model()
 model.print_stats()
