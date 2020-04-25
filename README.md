@@ -2,6 +2,17 @@
 
 Caleb Belth, Xinyi Zheng, Jilles Vreeken, and Danai Koutra. _What is Normal, What is Strange, and What is Missing in a Knowledge Graph: Unified Characterization via Inductive Summarization_. ACM The Web Conference (WWW), April 2020. [[pdf](https://arxiv.org/abs/2003.10412)]
 
+If used, please cite:
+```
+@inproceedings{belth2020normal,
+  title={What is Normal, What is Strange, and What is Missing in a Knowledge Graph: Unified Characterization via Inductive Summarization},
+  author={Belth, Caleb and Zheng, Xinyi and Vreeken, Jilles and Koutra, Danai},
+  booktitle={Proceedings of The Web Conference 2020},
+  pages={1115--1126},
+  year={2020}
+}
+```
+
 ## Setup
 
 1. `git clone git@github.com:GemsLab/KGist.git`
