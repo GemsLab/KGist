@@ -52,6 +52,10 @@ e2 l1 l2 l3 ...
 #### Interface
 
 ```
+from graph import Graph
+from searcher import Searcher
+from model import Model
+
 # load graph
 graph = Graph('nell', idify=True)
 # create a Searcher object to search for a model (set of rules)
@@ -66,6 +70,21 @@ model.print_stats()
 model = model.nest_rules()
 model.print_stats()
 ```
+
+To compute anomaly scores for triples as in Section 4.3:
+
+```
+from anomaly_detector import AnomalyDetector
+
+# construct an anomaly detector with the KGist model
+anomaly_detector = AnomalyDetector(model)
+# an edge/triple to score
+edge = ('concept:company:limited_brands', 'concept:companyceo', 'concept:ceo:leslie_wexner')
+anomaly_detector.score_edge(edge)
+>>> 26.5164
+```
+
+Larger numbers mean more anomalous. Note that in our experiments in Section 5.2, we used KGist+n, which would be the model without running `model.nest_rules()`.
 
 ### Arguments
 
