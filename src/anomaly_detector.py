@@ -7,6 +7,7 @@ from evaluator import Evaluator
 
 class AnomalyDetector:
     def __init__(self, model):
+        self.idify = model.graph.idify
         self.model = model
         self.evaluator = Evaluator(self.model.graph)
         self.subject_to_rules = dict()
@@ -70,6 +71,8 @@ class AnomalyDetector:
         return score
 
     def score_edge(self, edge, blame_edge=True):
+        if self.idify:
+            edge = (self.model.graph.node_to_id[edge[0]], self.model.graph.pred_to_id[edge[1]], self.model.graph.node_to_id[edge[2]])
         eid = self.edge_to_id[edge] if type(edge) is tuple else edge
         sub, pred, obj = edge if type(edge) is tuple else self.model.graph.id_to_edge[eid]
         score = 0
