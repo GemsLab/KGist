@@ -50,8 +50,7 @@ e2 l1 l2 l3 ...
 `python main.py --graph nell`
 
 #### Interface
-
-```
+```python
 from graph import Graph
 from searcher import Searcher
 from model import Model
@@ -73,7 +72,7 @@ model.print_stats()
 
 To compute anomaly scores for triples as in Section 4.3:
 
-```
+```python
 from anomaly_detector import AnomalyDetector
 
 # construct an anomaly detector with the KGist model
