@@ -8,7 +8,7 @@ from evaluator import Evaluator
 from scipy.sparse import csr_matrix
 import numpy as np
 from rule import Rule
-from realized_rule import RealizedRule
+from correct_assertion import CorrectAssertion
 from copy import deepcopy
 
 class TestRule(unittest.TestCase):
@@ -28,22 +28,22 @@ class TestRule(unittest.TestCase):
         '''
         rule = Rule(('root',), children=[('pred', 'out', (('leaf',), ()))])
         leaf = Rule(('leaf',), children=[('other_pred', 'out', (('new_leaf',), ()))])
-        real1 = RealizedRule('root1', label=('root',))
+        ca1 = CorrectAssertion('root1', label=('root',))
         # (u, u_typ, pred, dir, v, v_typ)
-        real1.add_edge(('root1', ('root',), 'pred', 'out', 'leaf1', ('leaf',)), labels=True)
-        rule.insert_realization(real1)
-        assert(rule.realized())
-        real2 = RealizedRule(('leaf1',), label=('leaf',))
-        real2.add_edge(('new_leaf1', ('leaf',), 'other_pred', 'out', 'leaf1', ('new_leaf',)), labels=True)
-        leaf.insert_realization(real2)
-        assert(leaf.realized())
+        ca1.add_edge(('root1', ('root',), 'pred', 'out', 'leaf1', ('leaf',)), labels=True)
+        rule.insert_correct_assertion(ca1)
+        assert(rule.instantiated())
+        ca2 = CorrectAssertion(('leaf1',), label=('leaf',))
+        ca2.add_edge(('new_leaf1', ('leaf',), 'other_pred', 'out', 'leaf1', ('new_leaf',)), labels=True)
+        leaf.insert_correct_assertion(ca2)
+        assert(leaf.instantiated())
         assert(rule.get_leaves() == [('leaf',)])
         assert(rule.pin_to_leaf(leaf))
         assert(rule.get_leaves() == [('new_leaf',)])
-        assert(len(rule.realizations) == 1)
-        for real in rule.realizations:
-            assert(len(real.nodes[real.root].neighbors) == 1)
-            assert(len(real.nodes[real.root].neighbors_of_type) == 1)
+        assert(len(rule.correct_assertions) == 1)
+        for ca in rule.correct_assertions:
+            assert(len(ca.nodes[ca.root].neighbors) == 1)
+            assert(len(ca.nodes[ca.root].neighbors_of_type) == 1)
 
     def test_pin_to_leaf_3(self):
         '''
@@ -61,40 +61,39 @@ class TestRule(unittest.TestCase):
         '''
         rule = Rule('root', children=[('pred', 'out', ('leaf', ()))])
         leaf = Rule('leaf', children=[('other_pred', 'out', ('new_leaf', ()))])
-        real1 = RealizedRule('root1', label='root')
-        real2 = RealizedRule('root2', label='root')
-        real1.add_edge(('root1', ('root',), 'pred', 'out', 'leaf1', ('leaf',)), labels=True)
-        real2.add_edge(('root2', ('root',), 'other_pred', 'out', 'leaf2', ('leaf',)), labels=True)
-        rule.insert_realization(real1)
-        rule.insert_realization(real2)
-        real3 = RealizedRule('leaf2', label='leaf')
-        real3.add_edge(('leaf2', ('root',), 'pred', 'out', 'new_leaf1', ('new_leaf',)), labels=True)
-        leaf.insert_realization(real3)
+        ca1 = CorrectAssertion('root1', label='root')
+        ca2 = CorrectAssertion('root2', label='root')
+        ca1.add_edge(('root1', ('root',), 'pred', 'out', 'leaf1', ('leaf',)), labels=True)
+        ca2.add_edge(('root2', ('root',), 'other_pred', 'out', 'leaf2', ('leaf',)), labels=True)
+        rule.insert_correct_assertion(ca1)
+        rule.insert_correct_assertion(ca2)
+        ca3 = CorrectAssertion('leaf2', label='leaf')
+        ca3.add_edge(('leaf2', ('root',), 'pred', 'out', 'new_leaf1', ('new_leaf',)), labels=True)
+        leaf.insert_correct_assertion(ca3)
         assert(rule.get_leaves() == ['leaf'])
         assert(rule.pin_to_leaf(leaf))
         assert(rule.get_leaves() == ['new_leaf'])
 
     def test_pin_to_leaf_5(self):
         '''
-        Test that pinning to a leaf realization works when there is a match.
+        Test that pinning to a leaf correct assertions works when there is a match.
         '''
         rule = Rule('root', children=[('pred', 'out', ('leaf', ()))])
         leaf = Rule('leaf', children=[('other_pred', 'out', ('new_leaf', ()))])
-        real1 = RealizedRule('root1', label='root')
-        real1.add_edge(('root1', ('root',), 'pred', 'out', 'leaf1', ('leaf',)), labels=True)
-        # real1.insert('leaf1', '0', pred='pred', dir='out', label='leaf')
-        rule.insert_realization(real1)
-        assert(rule.realized())
-        real2 = RealizedRule('leaf1', label='leaf')
-        real2.add_edge(('leaf1', ('root',), 'pred', 'out', 'new_leaf1', ('new_leaf',)), labels=True)
-        leaf.insert_realization(real2)
-        assert(leaf.realized())
+        ca1 = CorrectAssertion('root1', label='root')
+        ca1.add_edge(('root1', ('root',), 'pred', 'out', 'leaf1', ('leaf',)), labels=True)
+        rule.insert_correct_assertion(ca1)
+        assert(rule.instantiated())
+        ca2 = CorrectAssertion('leaf1', label='leaf')
+        ca2.add_edge(('leaf1', ('root',), 'pred', 'out', 'new_leaf1', ('new_leaf',)), labels=True)
+        leaf.insert_correct_assertion(ca2)
+        assert(leaf.instantiated())
         assert(rule.get_leaves() == ['leaf'])
         assert(rule.pin_to_leaf(leaf))
 
     def test_pin_to_leaf_6(self):
         '''
-        Test that pinning to a leaf realization works on the real graph.
+        Test that pinning to a leaf correct_assertion works on the ca graph.
         '''
         model = Model(Graph('test', idify=False, verbose=False))
         model.add_rule((('1927286',), (('6293378', 'out', (('7241965',), ())),)))
@@ -107,7 +106,7 @@ class TestRule(unittest.TestCase):
 
     def test_pin_to_leaf_7(self):
         '''
-        Test that pinning to a leaf realization works on the real graph.
+        Test that pinning to a leaf correct_assertion works on the ca graph.
         '''
         model = Model(Graph('test', idify=False, verbose=False))
         model.add_rule((('7490702',), (('412681', 'in', (('7241965',), ())),)))
@@ -116,11 +115,11 @@ class TestRule(unittest.TestCase):
         rule2 = Rule(('7241965',), (('6293378', 'in', (('1927286',), ())),))
         model.plant_forest(rule1)
         model.plant_forest(rule2)
-        for real in rule2.realizations:
+        for ca in rule2.correct_assertions:
             res = None
-            for r in rule1.realizations:
-                res = real.root in r.nodes or res
-            if real.root in {'36240', '6555563', '6175574'}:
+            for r in rule1.correct_assertions:
+                res = ca.root in r.nodes or res
+            if ca.root in {'36240', '6555563', '6175574'}:
                 assert(res)
             else:
                 assert(not res)
@@ -157,36 +156,36 @@ class TestRule(unittest.TestCase):
         rule2 = Rule(('blue',), (('other_black', 'out', (('red',), ())),))
         model.plant_forest(rule1)
         model.plant_forest(rule2)
-        assert(len(rule1.realizations) == 2)
-        assert(len(rule2.realizations) == 4)
+        assert(len(rule1.correct_assertions) == 2)
+        assert(len(rule2.correct_assertions) == 4)
 
         assert(rule1.pin_to_leaf(rule2))
-        assert(len(rule1.realizations) == 2)
-        for real, root in zip(rule1.realizations, ['1', '2']):
-            assert(real.root == root)
-            assert(len(real.nodes[real.root].neighbors) == 2)
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('black', 'out', ('blue',))})
-            if real.root == '1':
-                assert(set(real.nodes[real.root].neighbors_of_type[('black', 'out', ('blue',))]) == {'3', '4'})
+        assert(len(rule1.correct_assertions) == 2)
+        for ca, root in zip(rule1.correct_assertions, ['1', '2']):
+            assert(ca.root == root)
+            assert(len(ca.nodes[ca.root].neighbors) == 2)
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('black', 'out', ('blue',))})
+            if ca.root == '1':
+                assert(set(ca.nodes[ca.root].neighbors_of_type[('black', 'out', ('blue',))]) == {'3', '4'})
             else:
-                assert(set(real.nodes[real.root].neighbors_of_type[('black', 'out', ('blue',))]) == {'5', '6'})
-            for child in real.nodes[real.root].neighbors:
-                child = real.nodes[child]
+                assert(set(ca.nodes[ca.root].neighbors_of_type[('black', 'out', ('blue',))]) == {'5', '6'})
+            for child in ca.nodes[ca.root].neighbors:
+                child = ca.nodes[child]
                 if child.name == '3':
-                    assert(len(real.nodes[child.name].neighbors) == 4)
-                    assert(set(real.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)), ('other_black', 'out', ('red',))})
-                    assert(set(real.nodes[child.name].neighbors_of_type[('other_black', 'out', ('red',))]) == {'8', '9', '10'})
+                    assert(len(ca.nodes[child.name].neighbors) == 4)
+                    assert(set(ca.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)), ('other_black', 'out', ('red',))})
+                    assert(set(ca.nodes[child.name].neighbors_of_type[('other_black', 'out', ('red',))]) == {'8', '9', '10'})
                 elif child.name == '4':
-                    assert(len(real.nodes[child.name].neighbors) == 2)
-                    assert(set(real.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)), ('other_black', 'out', ('red',))})
-                    assert(set(real.nodes[child.name].neighbors_of_type[('other_black', 'out', ('red',))]) == {'11'})
+                    assert(len(ca.nodes[child.name].neighbors) == 2)
+                    assert(set(ca.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)), ('other_black', 'out', ('red',))})
+                    assert(set(ca.nodes[child.name].neighbors_of_type[('other_black', 'out', ('red',))]) == {'11'})
                 elif child.name == '5':
-                    assert(len(real.nodes[child.name].neighbors) == 2)
-                    assert(set(real.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)), ('other_black', 'out', ('red',))})
-                    assert(set(real.nodes[child.name].neighbors_of_type[('other_black', 'out', ('red',))]) == {'12'})
+                    assert(len(ca.nodes[child.name].neighbors) == 2)
+                    assert(set(ca.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)), ('other_black', 'out', ('red',))})
+                    assert(set(ca.nodes[child.name].neighbors_of_type[('other_black', 'out', ('red',))]) == {'12'})
                 elif child.name == '6':
-                    assert(len(real.nodes[child.name].neighbors) == 1)
-                    assert(set(real.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)),})
+                    assert(len(ca.nodes[child.name].neighbors) == 1)
+                    assert(set(ca.nodes[child.name].neighbors_of_type.keys()) == {('black', 'in', ('green',)),})
                 else:
                     assert(False)
 
@@ -206,76 +205,76 @@ class TestRule(unittest.TestCase):
         model.plant_forest(rule3)
         assert(rule1.pin_to_leaf(rule2))
         assert(rule1.pin_to_leaf(rule3))
-        assert(set(real.root for real in rule1.realizations) == {'1', '2'})
-        for real in rule1.realizations:
-            if real.root == '1':
-                assert(set(real.nodes['1'].neighbors) == {'3', '4'})
-                assert(set(real.nodes['1'].neighbors_of_type.keys()) == {('black0', 'out', ('blue',))})
-                for child in real.nodes.keys():
+        assert(set(ca.root for ca in rule1.correct_assertions) == {'1', '2'})
+        for ca in rule1.correct_assertions:
+            if ca.root == '1':
+                assert(set(ca.nodes['1'].neighbors) == {'3', '4'})
+                assert(set(ca.nodes['1'].neighbors_of_type.keys()) == {('black0', 'out', ('blue',))})
+                for child in ca.nodes.keys():
                     if child == '3':
-                        a = real.nodes['3'].neighbors
+                        a = ca.nodes['3'].neighbors
                         b = set()
-                        for cs in real.nodes['3'].neighbors_of_type.values():
+                        for cs in ca.nodes['3'].neighbors_of_type.values():
                             b.update(cs)
                         assert(len(a) == 3)
                         assert(len(b) == 3)
                         assert(a == b)
                         assert(a == {'1', '8', '9'})
-                        assert(set(real.nodes[child].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black1', 'out', ('purple',)), ('black2', 'out', ('red',))})
+                        assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black1', 'out', ('purple',)), ('black2', 'out', ('red',))})
                     if child == '4':
-                        assert(real.nodes['4'].neighbors == {'1', '10', '11'})
-                        assert(set(real.nodes['4'].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black1', 'out', ('purple',)), ('black2', 'out', ('red',))})
-                        a = set(real.nodes['4'].neighbors)
+                        assert(ca.nodes['4'].neighbors == {'1', '10', '11'})
+                        assert(set(ca.nodes['4'].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black1', 'out', ('purple',)), ('black2', 'out', ('red',))})
+                        a = set(ca.nodes['4'].neighbors)
                         b = set()
-                        for cs in real.nodes['4'].neighbors_of_type.values():
+                        for cs in ca.nodes['4'].neighbors_of_type.values():
                             b.update(cs)
                         assert(len(a) == 3)
                         assert(len(b) == 3)
                         assert(a == b)
-            elif real.root == '2':
-                assert(set(real.nodes[real.root].neighbors) == {'5', '6'})
-                assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('black0', 'out', ('blue',))})
-                for child in real.nodes.keys():
+            elif ca.root == '2':
+                assert(set(ca.nodes[ca.root].neighbors) == {'5', '6'})
+                assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('black0', 'out', ('blue',))})
+                for child in ca.nodes.keys():
                     if child == '5':
-                        assert(real.nodes['5'].neighbors == {'2', '12'})
-                        assert(set(real.nodes['5'].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black2', 'out', ('red',))})
-                        a = real.nodes['5'].neighbors
+                        assert(ca.nodes['5'].neighbors == {'2', '12'})
+                        assert(set(ca.nodes['5'].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black2', 'out', ('red',))})
+                        a = ca.nodes['5'].neighbors
                         b = set()
-                        for cs in real.nodes['5'].neighbors_of_type.values():
+                        for cs in ca.nodes['5'].neighbors_of_type.values():
                             b.update(cs)
                         assert(len(a) == 2)
                         assert(len(b) == 2)
                         assert(a == b)
                     if child == '6':
-                        assert(real.nodes['6'].neighbors == {'2', '13'})
-                        assert(set(real.nodes['6'].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black1', 'out', ('purple',))})
-                        a = real.nodes['6'].neighbors
+                        assert(ca.nodes['6'].neighbors == {'2', '13'})
+                        assert(set(ca.nodes['6'].neighbors_of_type.keys()) == {('black0', 'in', ('green',)), ('black1', 'out', ('purple',))})
+                        a = ca.nodes['6'].neighbors
                         b = set()
-                        for cs in real.nodes['6'].neighbors_of_type.values():
+                        for cs in ca.nodes['6'].neighbors_of_type.values():
                             b.update(cs)
                         assert(len(a) == 2)
                         assert(len(b) == 2)
                         assert(a == b)
 
-        assert(len(rule1.realizations) == 2)
+        assert(len(rule1.correct_assertions) == 2)
         rule1.filter_errant()
-        assert(len(rule1.realizations) == 1)
-        assert(rule1.realizations[0].root == '1')
+        assert(len(rule1.correct_assertions) == 1)
+        assert(rule1.correct_assertions[0].root == '1')
 
 
-    def test_insert_realization_1(self):
+    def test_insert_correct_assertion_1(self):
         '''
-        Test that inserting a realization into a rule works.
+        Test that inserting a correct_assertion into a rule works.
         '''
         rule = Rule(('1927286',), (('6293378', 'out', (('7241965',), ())),))
-        real = RealizedRule('7499850', label='1927286')
-        real.add_edge(('7499850', ('1927286',), '6293378', 'out', '36240', ('7241965',)))
-        real.add_edge(('7499850', ('1927286',), '6293378', 'out', '2415820', ('7241965',)))
-        real.add_edge(('7499850', ('1927286',), '6293378', 'out', '6175574', ('7241965',)))
-        assert(len(real.nodes['7499850'].neighbors) == 3)
-        rule.insert_realization(real)
-        assert(rule.realized())
-        assert(rule.realizations[0] == real)
+        ca = CorrectAssertion('7499850', label='1927286')
+        ca.add_edge(('7499850', ('1927286',), '6293378', 'out', '36240', ('7241965',)))
+        ca.add_edge(('7499850', ('1927286',), '6293378', 'out', '2415820', ('7241965',)))
+        ca.add_edge(('7499850', ('1927286',), '6293378', 'out', '6175574', ('7241965',)))
+        assert(len(ca.nodes['7499850'].neighbors) == 3)
+        rule.insert_correct_assertion(ca)
+        assert(rule.instantiated())
+        assert(rule.correct_assertions[0] == ca)
 
     def test_correct_assertions_1(self):
         '''
@@ -287,9 +286,9 @@ class TestRule(unittest.TestCase):
             model.add_rule(rule)
             tree = Rule(rule[0], rule[1])
             model.plant_forest(tree)
-            assert(set(real.root for real in tree.realizations) == set(cas['ca_to_size'].keys()))
+            assert(set(ca.root for ca in tree.correct_assertions) == set(cas['ca_to_size'].keys()))
             # if cas overlap, the correct assertion children will be fewer
-            assert(len(tree.realizations) <= sum(cas['ca_to_size'].values()))
+            assert(len(tree.correct_assertions) <= sum(cas['ca_to_size'].values()))
 
     def test_filter_errant_1(self):
         model = Model(Graph('test', idify=False, verbose=False))
@@ -300,18 +299,18 @@ class TestRule(unittest.TestCase):
         model.plant_forest(rule1)
         model.plant_forest(rule2)
         assert(rule1.pin_to_leaf(rule2))
-        assert(rule1.realizations[0].root == '7992351')
-        assert(rule1.realizations[0].nodes['7992351'].neighbors == {'2415820'})
-        assert(rule1.realizations[0].nodes['7992351'].neighbors_of_type.keys() == {('3320538', 'in', ('7241965',))})
-        assert(set(rule1.realizations[0].nodes.keys()) == {'7992351', '2415820'})
-        assert(rule1.realizations[1].root == '2873925')
-        assert(rule1.realizations[1].nodes['2873925'].neighbors == {'36240'})
-        assert(set(rule1.realizations[1].nodes.keys()) == {'2873925', '36240', '3352101'})
+        assert(rule1.correct_assertions[0].root == '7992351')
+        assert(rule1.correct_assertions[0].nodes['7992351'].neighbors == {'2415820'})
+        assert(rule1.correct_assertions[0].nodes['7992351'].neighbors_of_type.keys() == {('3320538', 'in', ('7241965',))})
+        assert(set(rule1.correct_assertions[0].nodes.keys()) == {'7992351', '2415820'})
+        assert(rule1.correct_assertions[1].root == '2873925')
+        assert(rule1.correct_assertions[1].nodes['2873925'].neighbors == {'36240'})
+        assert(set(rule1.correct_assertions[1].nodes.keys()) == {'2873925', '36240', '3352101'})
 
-        assert(len(rule1.realizations) == 2)
+        assert(len(rule1.correct_assertions) == 2)
         rule1.filter_errant()
-        assert(len(rule1.realizations) == 1)
-        assert(rule1.realizations[0].root == '2873925')
+        assert(len(rule1.correct_assertions) == 1)
+        assert(rule1.correct_assertions[0].root == '2873925')
 
     def test_filter_errant_2(self):
         model = Model(Graph('test', idify=False, verbose=False))
@@ -322,53 +321,53 @@ class TestRule(unittest.TestCase):
         model.plant_forest(rule1)
         model.plant_forest(rule2)
         assert(rule1.pin_to_leaf(rule2))
-        assert(len(rule1.realizations) == 1)
-        assert(rule1.realizations[0].root == '7499850')
-        assert(set(rule1.realizations[0].nodes.keys()) == {'7499850', '6175574', '36240', '6555563', '879961', '2415820', '6341376', '308389'})
+        assert(len(rule1.correct_assertions) == 1)
+        assert(rule1.correct_assertions[0].root == '7499850')
+        assert(set(rule1.correct_assertions[0].nodes.keys()) == {'7499850', '6175574', '36240', '6555563', '879961', '2415820', '6341376', '308389'})
 
         rule1.filter_errant()
-        assert(len(rule1.realizations) == 0)
+        assert(len(rule1.correct_assertions) == 0)
 
     def test_filter_errant_3(self):
         rule1 = Rule(('green',), (('black', 'out', (('blue',), ())),))
         rule2 = Rule(('blue',), (('other_black', 'out', (('red',), ())),))
 
-        real1 = RealizedRule(1, label=('green',))
+        ca1 = CorrectAssertion(1, label=('green',))
         # (u, u_typ, pred, dir, v, v_typ)
-        real1.add_edge((1, ('green',), 'black', 'out', 3, ('blue',)))
-        real1.add_edge((1, ('green',), 'black', 'out', 4, ('blue',)))
+        ca1.add_edge((1, ('green',), 'black', 'out', 3, ('blue',)))
+        ca1.add_edge((1, ('green',), 'black', 'out', 4, ('blue',)))
 
-        real2 = RealizedRule(2, label=('green',))
-        real2.add_edge((2, ('green',), 'black', 'out', 5, ('blue',)))
-        real2.add_edge((2, ('green',), 'black', 'out', 6, ('blue',)))
+        ca2 = CorrectAssertion(2, label=('green',))
+        ca2.add_edge((2, ('green',), 'black', 'out', 5, ('blue',)))
+        ca2.add_edge((2, ('green',), 'black', 'out', 6, ('blue',)))
 
-        real3 = RealizedRule(3, label=('blue',))
-        real3.add_edge((3, ('blue',), 'other_black', 'out', 8, ('red',)))
-        real3.add_edge((3, ('blue',), 'other_black', 'out', 9, ('red',)))
-        real3.add_edge((3, ('blue',), 'other_black', 'out', 10, ('red',)))
+        ca3 = CorrectAssertion(3, label=('blue',))
+        ca3.add_edge((3, ('blue',), 'other_black', 'out', 8, ('red',)))
+        ca3.add_edge((3, ('blue',), 'other_black', 'out', 9, ('red',)))
+        ca3.add_edge((3, ('blue',), 'other_black', 'out', 10, ('red',)))
 
-        real4 = RealizedRule(4, label=('blue',))
-        real4.add_edge((4, ('blue',), 'other_black', 'out', 11, ('red',)))
+        ca4 = CorrectAssertion(4, label=('blue',))
+        ca4.add_edge((4, ('blue',), 'other_black', 'out', 11, ('red',)))
 
-        real5 = RealizedRule(5, label=('blue',))
-        real5.add_edge((5, ('blue',), 'other_black', 'out', 12, ('red',)))
+        ca5 = CorrectAssertion(5, label=('blue',))
+        ca5.add_edge((5, ('blue',), 'other_black', 'out', 12, ('red',)))
 
-        real6 = RealizedRule(7, label=('blue',))
-        real6.add_edge((7, ('blue',), 'other_black', 'out', 13, ('red',)))
+        ca6 = CorrectAssertion(7, label=('blue',))
+        ca6.add_edge((7, ('blue',), 'other_black', 'out', 13, ('red',)))
 
-        rule1.insert_realization(real1)
-        rule1.insert_realization(real2)
+        rule1.insert_correct_assertion(ca1)
+        rule1.insert_correct_assertion(ca2)
 
-        rule2.insert_realization(real3)
-        rule2.insert_realization(real4)
-        rule2.insert_realization(real5)
-        rule2.insert_realization(real6)
+        rule2.insert_correct_assertion(ca3)
+        rule2.insert_correct_assertion(ca4)
+        rule2.insert_correct_assertion(ca5)
+        rule2.insert_correct_assertion(ca6)
 
         assert(rule1.pin_to_leaf(rule2))
 
-        assert(len(rule1.realizations) == 2)
+        assert(len(rule1.correct_assertions) == 2)
         rule1.filter_errant()
-        assert(len(rule1.realizations) == 1)
+        assert(len(rule1.correct_assertions) == 1)
 
     def test_filter_errant_4(self):
         graph = Graph('test', verbose=False)
@@ -381,7 +380,7 @@ class TestRule(unittest.TestCase):
         model.plant_forest(rule2)
         assert(rule1.pin_to_leaf(rule2))
         rule1.filter_errant()
-        assert(len(rule1.realizations) == 0)
+        assert(len(rule1.correct_assertions) == 0)
 
     def test_filter_errant_5(self):
         graph = Graph('test', verbose=False)
@@ -398,7 +397,7 @@ class TestRule(unittest.TestCase):
         assert(rule1.pin_to_leaf(rule2))
         assert(rule1.pin_to_leaf(rule3))
         rule1.filter_errant()
-        assert(len(rule1.realizations) == 0)
+        assert(len(rule1.correct_assertions) == 0)
 
     def test_get_atoms_1(self):
         rule1 = Rule(('8226812',), (('3320538', 'in', (('7241965',), ())),))
@@ -515,7 +514,7 @@ class TestRule(unittest.TestCase):
         assert(len(rule1.get_edges_covered()) == 8)
         assert(len(rule1.get_labels_covered()) == 7)
         rule1.filter_errant()
-        assert(len(rule1.realizations) == 0)
+        assert(len(rule1.correct_assertions) == 0)
         assert(len(rule1.get_edges_covered()) == 0)
         assert(len(rule1.get_labels_covered()) == 0)
 
@@ -531,15 +530,15 @@ class TestRule(unittest.TestCase):
         original_covered_edges = set(rule1.get_edges_covered())
         original_covered_labels = set(rule1.get_labels_covered())
         assert(len(rule1.children) == 1)
-        assert(len(rule1.realizations[0].nodes['7499850'].neighbors_of_type) == 1)
+        assert(len(rule1.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 1)
         assert(rule1.merge(rule2))
         assert(len(rule1.children) == 2)
         assert(set(child[0] for child in rule1.children) == {'412681', '6293378'})
         assert(set(child[2].root for child in rule1.children) == {('7241965',), ('7490702',)})
-        assert(len(rule1.realizations) == 1)
+        assert(len(rule1.correct_assertions) == 1)
         assert(rule1.get_edges_covered() == original_covered_edges.union(rule2.get_edges_covered()))
         assert(rule1.get_labels_covered() == original_covered_labels.union(rule2.get_labels_covered()))
-        assert(len(rule1.realizations[0].nodes['7499850'].neighbors_of_type) == 2)
+        assert(len(rule1.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 2)
 
     def test_rule_merge_2(self):
         graph = Graph('test', verbose=False)
@@ -556,25 +555,25 @@ class TestRule(unittest.TestCase):
         original_covered_edges = set(rule1.get_edges_covered())
         original_covered_labels = set(rule1.get_labels_covered())
         assert(len(rule1.children) == 1)
-        assert(len(rule1.realizations[0].nodes['7499850'].neighbors_of_type) == 1)
+        assert(len(rule1.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 1)
         assert(rule1.merge(rule2))
         assert(len(rule1.children) == 2)
         assert(set(child[0] for child in rule1.children) == {'412681', '6293378'})
         assert(set(child[2].root for child in rule1.children) == {('7241965',), ('7490702',)})
-        assert(len(rule1.realizations) == 1)
+        assert(len(rule1.correct_assertions) == 1)
         assert(rule1.get_edges_covered() == original_covered_edges.union(rule2.get_edges_covered()))
         assert(rule1.get_labels_covered() == original_covered_labels.union(rule2.get_labels_covered()))
-        assert(len(rule1.realizations[0].nodes['7499850'].neighbors_of_type) == 2)
+        assert(len(rule1.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 2)
 
         # try more merges
         assert(rule1.merge(rule3))
         assert(len(rule1.children) == 3)
         assert(set(child[0] for child in rule1.children) == {'412681', '6293378', '3320538'})
         assert(set(child[2].root for child in rule1.children) == {('7241965',), ('7490702',), ('8226812',)})
-        assert(len(rule1.realizations) == 1)
+        assert(len(rule1.correct_assertions) == 1)
         assert(rule1.get_edges_covered() == original_covered_edges.union(rule2.get_edges_covered()).union(rule3.get_edges_covered()))
         assert(rule1.get_labels_covered() == original_covered_labels.union(rule2.get_labels_covered()).union(rule3.get_labels_covered()))
-        assert(len(rule1.realizations[0].nodes['7499850'].neighbors_of_type) == 3)
+        assert(len(rule1.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 3)
 
     def test_jaccard_sim_1(self):
         graph = Graph('test', verbose=False)
@@ -614,32 +613,32 @@ class TestRule(unittest.TestCase):
         model.plant_forest(rule2)
         model.plant_forest(rule3)
 
-        for real in rule1.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
-        for real in rule2.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('3320538', 'out', ('8226812',))})
-        for real in rule3.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('5835005', 'out', ('5794125',))})
+        for ca in rule1.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
+        for ca in rule2.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('3320538', 'out', ('8226812',))})
+        for ca in rule3.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('5835005', 'out', ('5794125',))})
 
         rule1.pin_to_leaf(rule2)
-        for real in rule1.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
-            for child in real.nodes[real.root].neighbors:
+        for ca in rule1.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
+            for child in ca.nodes[ca.root].neighbors:
                 if child in {'36240', '2415820'}:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('3320538', 'out', ('8226812',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('3320538', 'out', ('8226812',))})
                 else:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
 
         rule1.pin_to_leaf(rule3)
-        for real in rule1.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
-            for child in real.nodes[real.root].neighbors:
+        for ca in rule1.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
+            for child in ca.nodes[ca.root].neighbors:
                 if child in {'36240', '2415820'}:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('3320538', 'out', ('8226812',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('3320538', 'out', ('8226812',))})
                 elif child in {'6555563', '6341376'}:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('5835005', 'out', ('5794125',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('5835005', 'out', ('5794125',))})
                 else:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
 
     def test_label_children_3(self):
         '''
@@ -657,34 +656,34 @@ class TestRule(unittest.TestCase):
         model.plant_forest(rule2)
         model.plant_forest(rule3)
 
-        for real in rule1.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
-        for real in rule2.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('7051738', 'out', ('3029686',))})
-        for real in rule3.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('5835005', 'out', ('5794125',))})
+        for ca in rule1.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
+        for ca in rule2.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('7051738', 'out', ('3029686',))})
+        for ca in rule3.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('5835005', 'out', ('5794125',))})
 
         rule1.pin_to_leaf(rule2)
-        for real in rule1.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
-            for child in real.nodes[real.root].neighbors:
+        for ca in rule1.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
+            for child in ca.nodes[ca.root].neighbors:
                 if child in {'879961', '6341376'}:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('7051738', 'out', ('3029686',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('7051738', 'out', ('3029686',))})
                 else:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
 
         rule1.pin_to_leaf(rule3)
-        for real in rule1.realizations:
-            assert(set(real.nodes[real.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
-            for child in real.nodes[real.root].neighbors:
+        for ca in rule1.correct_assertions:
+            assert(set(ca.nodes[ca.root].neighbors_of_type.keys()) == {('6293378', 'out', ('7241965',))})
+            for child in ca.nodes[ca.root].neighbors:
                 if child == '6341376':
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('7051738', 'out', ('3029686',)), ('5835005', 'out', ('5794125',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('7051738', 'out', ('3029686',)), ('5835005', 'out', ('5794125',))})
                 elif child == '879961':
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('7051738', 'out', ('3029686',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('7051738', 'out', ('3029686',))})
                 elif child == '6555563':
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('5835005', 'out', ('5794125',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',)), ('5835005', 'out', ('5794125',))})
                 else:
-                    assert(set(real.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
+                    assert(set(ca.nodes[child].neighbors_of_type.keys()) == {('6293378', 'in', ('1927286',))})
 
     def test_compose_1(self):
         rule1 = Rule(('sport',), (('team', 'out', (('team',), ())),))
@@ -823,14 +822,14 @@ class TestRule(unittest.TestCase):
         merged = deepcopy(rule1)
         assert(merged.merge(rule2))
         assert(merged.merge(rule3))
-        assert(len(merged.realizations) == 1)
-        real = merged.realizations[0]
-        assert(real.root == '7499850')
-        assert(set(real.nodes.keys()) == {'7499850', '36240', '6175574', '6555563', '879961', '6341376', '2415820', '9054900', '8220493'})
-        assert(real.nodes['7499850'].neighbors == {'36240', '6175574', '6555563', '879961', '6341376', '2415820', '9054900', '8220493'})
-        assert(real.nodes['7499850'].neighbors_of_type['6293378', 'out', ('7241965',)] == {'36240', '6175574', '6555563', '879961', '6341376', '2415820'})
-        assert(real.nodes['7499850'].neighbors_of_type['412681', 'out', ('7490702',)] == {'8220493'})
-        assert(real.nodes['7499850'].neighbors_of_type['3320538', 'out', ('8226812',)] == {'9054900'})
+        assert(len(merged.correct_assertions) == 1)
+        ca = merged.correct_assertions[0]
+        assert(ca.root == '7499850')
+        assert(set(ca.nodes.keys()) == {'7499850', '36240', '6175574', '6555563', '879961', '6341376', '2415820', '9054900', '8220493'})
+        assert(ca.nodes['7499850'].neighbors == {'36240', '6175574', '6555563', '879961', '6341376', '2415820', '9054900', '8220493'})
+        assert(ca.nodes['7499850'].neighbors_of_type['6293378', 'out', ('7241965',)] == {'36240', '6175574', '6555563', '879961', '6341376', '2415820'})
+        assert(ca.nodes['7499850'].neighbors_of_type['412681', 'out', ('7490702',)] == {'8220493'})
+        assert(ca.nodes['7499850'].neighbors_of_type['3320538', 'out', ('8226812',)] == {'9054900'})
 
     def test_repeated_1(self):
         graph = Graph('repeated', verbose=False)
@@ -848,72 +847,72 @@ class TestRule(unittest.TestCase):
         model.plant_forest(r3)
         model.plant_forest(r4)
 
-        assert(len(r1.realizations) == 2)
-        assert(len(r2.realizations) == 2)
-        assert(len(r3.realizations) == 2)
-        assert(len(r4.realizations) == 2)
+        assert(len(r1.correct_assertions) == 2)
+        assert(len(r2.correct_assertions) == 2)
+        assert(len(r3.correct_assertions) == 2)
+        assert(len(r4.correct_assertions) == 2)
 
         m1 = deepcopy(r1)
         assert(m1.merge(r2))
-        assert(len(m1.realizations) == 2)
+        assert(len(m1.correct_assertions) == 2)
 
-        # first real
-        real = m1.realizations[0]
-        assert(real.root == '1')
-        assert(len(real.nodes['1'].neighbors_of_type) == 2)
-        assert(len(real.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]) == 1)
-        for it in real.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]:
+        # first ca
+        ca = m1.correct_assertions[0]
+        assert(ca.root == '1')
+        assert(len(ca.nodes['1'].neighbors_of_type) == 2)
+        assert(len(ca.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]) == 1)
+        for it in ca.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]:
             assert(it == '2')
-        assert(('e1\'', 'in', ('b',)) in real.nodes['1'].neighbors_of_type)
-        for it in real.nodes['1'].neighbors_of_type[('e1\'', 'in', ('b',))]:
+        assert(('e1\'', 'in', ('b',)) in ca.nodes['1'].neighbors_of_type)
+        for it in ca.nodes['1'].neighbors_of_type[('e1\'', 'in', ('b',))]:
             assert(it == '2')
-        # second real
-        real = m1.realizations[1]
-        assert(real.root == '4')
-        assert(len(real.nodes['4'].neighbors_of_type) == 2)
-        assert(('e1', 'out', ('b',)) in real.nodes['4'].neighbors_of_type)
-        assert(('e1\'', 'in', ('b',)) in real.nodes['4'].neighbors_of_type)
+        # second ca
+        ca = m1.correct_assertions[1]
+        assert(ca.root == '4')
+        assert(len(ca.nodes['4'].neighbors_of_type) == 2)
+        assert(('e1', 'out', ('b',)) in ca.nodes['4'].neighbors_of_type)
+        assert(('e1\'', 'in', ('b',)) in ca.nodes['4'].neighbors_of_type)
 
         m2 = deepcopy(r3)
         assert(m2.merge(r4))
-        assert(len(m2.realizations) == 2)
+        assert(len(m2.correct_assertions) == 2)
 
-        # first real
-        real = m2.realizations[0]
-        assert(real.root == '2')
-        assert(len(real.nodes['2'].neighbors_of_type) == 2)
-        assert(('e2', 'out', ('c',)) in real.nodes['2'].neighbors_of_type)
-        assert(('e2\'', 'in', ('c',)) in real.nodes['2'].neighbors_of_type)
-        # second real
-        real = m2.realizations[1]
-        assert(real.root == '5')
-        assert(len(real.nodes['5'].neighbors_of_type) == 2)
-        assert(('e2', 'out', ('c',)) in real.nodes['5'].neighbors_of_type)
-        assert(('e2\'', 'in', ('c',)) in real.nodes['5'].neighbors_of_type)
+        # first ca
+        ca = m2.correct_assertions[0]
+        assert(ca.root == '2')
+        assert(len(ca.nodes['2'].neighbors_of_type) == 2)
+        assert(('e2', 'out', ('c',)) in ca.nodes['2'].neighbors_of_type)
+        assert(('e2\'', 'in', ('c',)) in ca.nodes['2'].neighbors_of_type)
+        # second ca
+        ca = m2.correct_assertions[1]
+        assert(ca.root == '5')
+        assert(len(ca.nodes['5'].neighbors_of_type) == 2)
+        assert(('e2', 'out', ('c',)) in ca.nodes['5'].neighbors_of_type)
+        assert(('e2\'', 'in', ('c',)) in ca.nodes['5'].neighbors_of_type)
 
         composed = deepcopy(m1)
         assert(composed.pin_to_leaf(m2))
-        assert(len(composed.realizations) == 2)
+        assert(len(composed.correct_assertions) == 2)
 
-        # rist real
-        real = composed.realizations[0]
-        assert(real.root == '1')
-        assert(len(real.nodes['1'].neighbors_of_type) == 2)
-        assert(len(real.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]) == 1)
-        for child in real.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]:
+        # rist ca
+        ca = composed.correct_assertions[0]
+        assert(ca.root == '1')
+        assert(len(ca.nodes['1'].neighbors_of_type) == 2)
+        assert(len(ca.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]) == 1)
+        for child in ca.nodes['1'].neighbors_of_type[('e1', 'out', ('b',))]:
             assert(child == '2')
-            assert(len(real.nodes['2'].neighbors_of_type) == 4)
-            for grand_child in real.nodes['2'].neighbors_of_type[('e2', 'out', ('c',))]:
+            assert(len(ca.nodes['2'].neighbors_of_type) == 4)
+            for grand_child in ca.nodes['2'].neighbors_of_type[('e2', 'out', ('c',))]:
                 assert(grand_child == '3')
-            for grand_child in real.nodes['2'].neighbors_of_type[('e2\'', 'in', ('c',))]:
+            for grand_child in ca.nodes['2'].neighbors_of_type[('e2\'', 'in', ('c',))]:
                 assert(grand_child == '3')
-        assert(len(real.nodes['1'].neighbors_of_type[('e1\'', 'in', ('b',))]) == 1)
-        for child in real.nodes['1'].neighbors_of_type[('e1\'', 'in', ('b',))]:
+        assert(len(ca.nodes['1'].neighbors_of_type[('e1\'', 'in', ('b',))]) == 1)
+        for child in ca.nodes['1'].neighbors_of_type[('e1\'', 'in', ('b',))]:
             assert(child == '2')
-            assert(len(real.nodes['2'].neighbors_of_type) == 4)
-            for grand_child in real.nodes['2'].neighbors_of_type[('e2', 'out', ('c',))]:
+            assert(len(ca.nodes['2'].neighbors_of_type) == 4)
+            for grand_child in ca.nodes['2'].neighbors_of_type[('e2', 'out', ('c',))]:
                 assert(grand_child == '3')
-            for grand_child in real.nodes['2'].neighbors_of_type[('e2\'', 'in', ('c',))]:
+            for grand_child in ca.nodes['2'].neighbors_of_type[('e2\'', 'in', ('c',))]:
                 assert(grand_child == '3')
 
     def test_get_preds_1(self):

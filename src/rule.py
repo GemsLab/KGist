@@ -22,7 +22,7 @@ class Rule:
     def has_children(self):
         return len(self.children) > 0
 
-    def realized(self):
+    def instantiated(self):
         return len(self.correct_assertions) > 0
 
     def insert(self, branch):
@@ -88,7 +88,7 @@ class Rule:
         for i, child in enumerate(self.children):
             pred, dir, child = child
             if child.root == leaf.root: # pin here
-                if self.realized():
+                if self.instantiated():
                     for leaf_real in leaf.correct_assertions: # append each leaf correct_assertion
                         for real in self.correct_assertions: # pin to each correct_assertion as well, if appropriate
                             if leaf_real.root in real.nodes:

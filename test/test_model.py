@@ -15,9 +15,9 @@ from rule import Rule
 class TestModel(unittest.TestCase):
 
     def check(self, node, labels, graph, model):
-        real_labels = set(graph.node_to_labels[node])
+        ca_labels = set(graph.node_to_labels[node])
         covered_labels = set(list(it[0] for it in filter(lambda ln: ln[1] == node, model.label_matrix)))
-        assert(real_labels.difference(covered_labels) == set(labels))
+        assert(ca_labels.difference(covered_labels) == set(labels))
 
     def test_make_assertions_1(self):
         graph = Graph('test', verbose=False)
@@ -233,9 +233,9 @@ class TestModel(unittest.TestCase):
         for r1, r2 in merged.rule_graph.edges():
             assert(r2.root in r1.get_leaves())
             a = set()
-            for real in r1.realizations:
-                a.update(set(real.nodes.keys()).difference({real.root}))
-            b = set(real.root for real in r2.realizations)
+            for ca in r1.correct_assertions:
+                a.update(set(ca.nodes.keys()).difference({ca.root}))
+            b = set(ca.root for ca in r2.correct_assertions)
             if r1.root == ('1927286',) and (r2.root == ('7490702',) or r2.root == ('7241965',)):
                 assert(0 < len(a.intersection(b)) / len(a.union(b)) < 1)
 
@@ -270,7 +270,7 @@ class TestModel(unittest.TestCase):
 
     def test_plant_forest_1(self):
         '''
-        Tests that a planting a forest leads to the correct number of realizations
+        Tests that a planting a forest leads to the correct number of correct_assertions
         and these cover the right number of edges.
         '''
         graph = Graph('test', idify=False, verbose=False)
@@ -278,33 +278,33 @@ class TestModel(unittest.TestCase):
         model = searcher.build_model(verbosity=0)
         rule = Rule(('1927286',), (('6293378', 'out', (('7241965',), ())),))
         model.plant_forest(rule)
-        assert(len(rule.realizations) == 1)
+        assert(len(rule.correct_assertions) == 1)
         assert(len(rule.get_edges_covered()) == 6)
         assert(rule.get_labels_covered() == {('7241965', '36240'), ('7241965', '6555563'), ('7241965', '2415820'), ('7241965', '879961'), ('7241965', '6341376'), ('7241965', '6175574')})
 
     def test_plant_forest_2(self):
         '''
-        Tests that a planting a forest leads to the correct number of realizations
+        Tests that a planting a forest leads to the correct number of correct_assertions
         and these cover the right number of edges.
         '''
         graph = Graph('test', idify=False, verbose=False)
         model = Model(graph)
         rule = Rule(('7241965',), (('6293378', 'in', (('1927286',), ())),))
         model.plant_forest(rule)
-        assert(len(rule.realizations) == 6)
+        assert(len(rule.correct_assertions) == 6)
         assert(len(rule.get_edges_covered()) == 6)
         assert(rule.get_labels_covered() == {('1927286', '7499850')})
 
     def test_plant_forest_3(self):
         '''
-        Tests that a planting a forest leads to the correct number of realizations
+        Tests that a planting a forest leads to the correct number of correct_assertions
         and these cover the right number of labels.
         '''
         graph = Graph('test', idify=False, verbose=False)
         model = Model(graph)
         rule = Rule(('7241965',), (('5835005', 'out', (('5794125',), ())),))
         model.plant_forest(rule)
-        assert(len(rule.realizations) == 2)
+        assert(len(rule.correct_assertions) == 2)
         assert(rule.get_labels_covered() == {('5794125', '308389')})
 
     def test_rule_1(self):
@@ -321,7 +321,7 @@ class TestModel(unittest.TestCase):
         model = Model(graph)
         rule = Rule(('1927286',), (('6293378', 'out', (('7241965',), ())),))
         model.plant_forest(rule)
-        assert(len(rule.realizations) == 1)
+        assert(len(rule.correct_assertions) == 1)
         assert(len(rule.children) == 1)
 
         assert(len(rule.get_edges_covered()) == 6)
@@ -360,9 +360,9 @@ class TestModel(unittest.TestCase):
             assert(len(rule.children) == 2)
             assert(set(child[0] for child in rule.children) == {'412681', '6293378'})
             assert(set(child[2].root for child in rule.children) == {('7241965',), ('7490702',)})
-            assert(len(rule.realizations) == 1)
-            assert(set(rule.realizations[0].nodes.keys()) == {('7499850'), ('36240'), ('6175574'), ('2415820'), ('879961'), ('6555563'), ('6341376'), ('8220493')})
-            assert(len(rule.realizations[0].nodes['7499850'].neighbors_of_type) == 2)
+            assert(len(rule.correct_assertions) == 1)
+            assert(set(rule.correct_assertions[0].nodes.keys()) == {('7499850'), ('36240'), ('6175574'), ('2415820'), ('879961'), ('6555563'), ('6341376'), ('8220493')})
+            assert(len(rule.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 2)
 
         evaluator = Evaluator(graph)
         assert(evaluator.evaluate(merged) < evaluator.evaluate(model))
@@ -393,9 +393,9 @@ class TestModel(unittest.TestCase):
             assert(len(rule.children) == 3)
             assert(set(child[0] for child in rule.children) == {'412681', '6293378', '3320538'})
             assert(set(child[2].root for child in rule.children) == {('7241965',), ('7490702',), ('8226812',)})
-            assert(len(rule.realizations) == 1)
-            assert(set(rule.realizations[0].nodes.keys()) == {('7499850'), ('36240'), ('6175574'), ('2415820'), ('879961'), ('6555563'), ('6341376'), ('8220493'), ('9054900')})
-            assert(len(rule.realizations[0].nodes['7499850'].neighbors_of_type) == 3)
+            assert(len(rule.correct_assertions) == 1)
+            assert(set(rule.correct_assertions[0].nodes.keys()) == {('7499850'), ('36240'), ('6175574'), ('2415820'), ('879961'), ('6555563'), ('6341376'), ('8220493'), ('9054900')})
+            assert(len(rule.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 3)
 
         evaluator = Evaluator(graph)
         assert(evaluator.evaluate(merged) < evaluator.evaluate(model))
@@ -418,9 +418,9 @@ class TestModel(unittest.TestCase):
             assert(len(rule.children) == 4)
             assert(set(child[0] for child in rule.children) == {'412681', '6293378', '3320538', '6291253'})
             assert(set(child[2].root for child in rule.children) == {('7241965',), ('7490702',), ('8226812',)})
-            assert(len(rule.realizations) == 1)
-            assert(set(rule.realizations[0].nodes.keys()) == {('7499850'), ('36240'), ('6175574'), ('2415820'), ('879961'), ('6555563'), ('6341376'), ('8220493'), ('9054900'), ('7992351')})
-            assert(len(rule.realizations[0].nodes['7499850'].neighbors_of_type) == 4)
+            assert(len(rule.correct_assertions) == 1)
+            assert(set(rule.correct_assertions[0].nodes.keys()) == {('7499850'), ('36240'), ('6175574'), ('2415820'), ('879961'), ('6555563'), ('6341376'), ('8220493'), ('9054900'), ('7992351')})
+            assert(len(rule.correct_assertions[0].nodes['7499850'].neighbors_of_type) == 4)
 
         evaluator = Evaluator(graph)
         assert(evaluator.evaluate(merged) < evaluator.evaluate(model))

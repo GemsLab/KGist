@@ -6,7 +6,6 @@ from evaluator import Evaluator
 from searcher import Searcher
 from model import Model
 from rule import Rule
-from realized_rule import RealizedRule
 from math import log2 as log
 from scipy.special import comb
 import numpy as np

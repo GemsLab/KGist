@@ -209,7 +209,7 @@ class Model:
         '''
         Grow a forest of correct_assertions for a level-0 rule
         '''
-        if rule.realized():
+        if rule.instantiated():
             return
         leaves = list()
         roots = set(self.graph.candidates[rule.tuplify()]['ca_to_size'].keys())
