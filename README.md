@@ -84,7 +84,7 @@ anomaly_detector.score_edge(edge)
 >>> 26.5164
 ```
 
-Larger numbers mean more anomalous. Note that in our experiments in Section 5.2, we used KGist+n, which would be the model without running `model.nest_rules()`.
+Larger numbers mean more anomalous. Note that in our experiments in Section 5.2, we used KGist+m, which would be the model without running `model.nest_rules()`.
 
 ### Arguments
 
