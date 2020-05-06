@@ -1,6 +1,8 @@
 # KGist: Knowledge Graph Summarization for Anomaly Detection & Completion
 
-Caleb Belth, Xinyi Zheng, Jilles Vreeken, and Danai Koutra. _What is Normal, What is Strange, and What is Missing in a Knowledge Graph: Unified Characterization via Inductive Summarization_. ACM The Web Conference (WWW), April 2020. [[pdf](https://arxiv.org/abs/2003.10412)]
+Caleb Belth, Xinyi Zheng, Jilles Vreeken, and Danai Koutra. _What is Normal, What is Strange, and What is Missing in a Knowledge Graph: Unified Characterization via Inductive Summarization_. ACM The Web Conference (WWW), April 2020. 
+
+[[pdf](https://arxiv.org/abs/2003.10412)]
 
 If used, please cite:
 ```bibtex
