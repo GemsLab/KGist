@@ -13,8 +13,7 @@ If used, please cite:
 }
 ```
 
-<video src="https://youtu.be/Ql7VEfliPXo" width="320" height="200" controls preload></video>
-
+**Presentation**: https://youtu.be/Ql7VEfliPXo
 
 ## Setup
 
