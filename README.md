@@ -13,6 +13,9 @@ If used, please cite:
 }
 ```
 
+<video src="https://youtu.be/Ql7VEfliPXo" width="320" height="200" controls preload></video>
+
+
 ## Setup
 
 1. `git clone git@github.com:GemsLab/KGist.git`
