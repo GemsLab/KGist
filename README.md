@@ -25,6 +25,13 @@ If used, please cite:
 6. `cd test/`
 7. `python tester.py`
 
+### Requirements 
+
+- `Python 3`
+- `numpy`
+- `scipy`
+- `networkx`
+
 ## Data
 
 Nell and DBpedia are zipped in the `data/` directory. Yago is too big to distribute via Github.
@@ -106,10 +113,11 @@ Larger numbers mean more anomalous. Note that in our experiments in Section 5.2,
 - `output/{KG_name}_model.pickle` saves a Model object.
 - `output/{KG_name}_model.rules` saves the rules, which are recursively defined, in parenthetical form.
 
-### Coming Soon
+### Frequently Asked Questions (FAQ)
 
-- Documentation on loading models.
-- More extensive examples.
+#### I want to run KGist on my own dataset. How did you construct the labels file?
+
+We constructed the labels file by moving the `rdf:type` triples to the labels file. Thus, if, for example, there are triples `(LaRose, rdf:type, book)` and `(LaRose, rdf:type, novel)` in the KG, then `LaRose book novel` would be a row in the labels file. 
 
 ### Comments or Questions
 
